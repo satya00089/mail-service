@@ -1,86 +1,99 @@
-# FastAPI Vercel Deployment
+# Mail Service — Minimal
 
-This project demonstrates how to deploy a FastAPI application on Vercel.
+Small FastAPI service to send email via SMTP (defaults to Gmail SMTP). Minimal, drop-in, and ready for local testing.
 
-## Requirements
+---
 
-- Python installed on your machine
-- Account on [Vercel](https://vercel.com/)
+## Files
 
-## Project Setup
+* `main.py` — FastAPI app with `POST /send` to send email.
+* `requirements.txt` — dependencies.
 
-1. **Project Structure**:
-    - Ensure your project has the following structure:
-    ```
-    ├── api
-    │   └── main.py
-    ├── requirements.txt
-    └── vercel.json
-    ```
+---
 
-2. **[`main.py`](./api/main.py "Go to definition") File**:
-    - Your [`api/main.py`](./api/main.py "Go to definition") file should look like this:
-    ```python
-    from fastapi import FastAPI
+## Quick install & run
 
-    app = FastAPI()
+1. Create venv and install:
 
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-    @app.get('/')
-    async def health_check():
-      return "The health check is successful v0.0.1!"
-    ```
+2. Add env (example `.env`):
 
-3. **[`requirements.txt`](./requirements.txt "Go to definition") File**:
-    - Ensure you have a [`requirements.txt`](./requirements.txt "Go to definition") file with the necessary dependencies:
-    ```
-    fastapi
-    uvicorn
-    ```
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=youraccount@gmail.com
+SMTP_PASS=your_app_password_here
+```
 
-4. **[`vercel.json`](./vercel.json "Go to definition") File**:
-    - Configure the [`vercel.json`](./vercel.json "Go to definition") file to tell Vercel how to deploy your application:
-    ```json
+> Use a Google **App Password** if your account has 2FA. **Do not commit** `.env`.
+
+3. Run:
+
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Server is at `http://localhost:8000`.
+
+---
+
+## Endpoint
+
+`POST /send` — accepts JSON:
+
+```json
+{
+  "to": "recipient@example.com",
+  "subject": "Hello",
+  "body": "Text or HTML",
+  "html": false,
+  "from_name": "Optional",
+  "from_email": "optional@sender.com",
+  "attachments": [
     {
-        "builds": [
-            {
-                "src": "api/main.py",
-                "use": "@vercel/python"
-            }
-        ],
-        "routes": [
-            {
-                "src": "/(.*)",
-                "dest": "api/main.py"
-            }
-        ]
+      "filename": "file.txt",
+      "content_base64": "SGVsbG8=",
+      "mime_type": "text/plain"
     }
-    ```
+  ]
+}
+```
 
-## Deployment
+Response: `200` on queued/send, error codes otherwise.
 
-You have two options to deploy your application:
+---
 
-5. **Option 1: Deploy using Vercel CLI**
-    - Open your terminal, install Vercel CLI, and deploy your project:
-    ```powershell
-    npm i -g vercel
-    vercel .
-    ```
+## Example curl
 
-6. **Option 2: Deploy using Vercel web interface**
-    - Go to [Vercel](https://vercel.com/).
-    - Login or create an account if you don't have one.
-    - Click on "New Project".
-    - Select the GitHub repository with your project.
-    - Select the Framework option: "Other".
-    - Click on "Deploy".
+Plain text:
 
-## Possible Issue with Node.js Version
+```bash
+curl -X POST "http://localhost:8000/send" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "friend@example.com",
+    "subject": "Test",
+    "body": "Hello from FastAPI",
+    "html": false
+  }'
+```
 
-- Go to the Vercel web interface.
-- Click on "Settings".
-- Search for "Node.js Version" and change it to 18.x.
-- Finally, repeat your deployment option.
+---
 
-That's it! You have successfully deployed your FastAPI application using Vercel.
+## Notes
+
+* Use App Passwords or OAuth2 for Gmail in production.
+* Protect the endpoint (API key / auth) before exposing publicly.
+* If frontend runs on a different origin, enable CORS in `main.py`.
+
+---
+
+If you want, I can also:
+
+* add a 1-file `.env.example`, or
+* add a tiny `dockerfile` for containerized testing.
