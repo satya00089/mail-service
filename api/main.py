@@ -8,11 +8,27 @@ import logging
 
 import smtplib
 
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel, EmailStr
 
 app = FastAPI()
 log = logging.getLogger("uvicorn.error")
+
+# CORS: tighten this in production
+allow_origins = os.getenv("CORS_ALLOW_ORIGINS", "*")
+if allow_origins == "*":
+    origins = ["*"]
+else:
+    origins = [o.strip() for o in allow_origins.split(",") if o.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ----- Config from env (safe: do NOT commit creds) -----
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
